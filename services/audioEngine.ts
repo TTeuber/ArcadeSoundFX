@@ -14,7 +14,7 @@ export class AudioEngine {
   constructor() {
     // Create nodes
     this.masterGain = new Tone.Gain(0.5).toDestination();
-    
+
     // A limiter to prevent clipping from loud arcade sounds
     const limiter = new Tone.Limiter(-1).connect(this.masterGain);
 
@@ -98,20 +98,71 @@ export class AudioEngine {
     // Trigger Envelope
     // If sustain is > 0, we need a triggerRelease, but for arcade "shots" usually triggerAttackRelease is best.
     // Calculate total duration to ensure release phase happens
-    const duration = params.ampAttack + params.ampDecay + 0.1; 
-    
+    const duration = params.ampAttack + params.ampDecay + 0.1;
+
     if (params.ampSustain > 0) {
-       // If there is sustain, hold it for a bit then release. 
-       // Since this is a "One Shot" generator, we simulate a key press of fixed duration (e.g. 0.1s) + release
-       this.ampEnv.triggerAttackRelease(params.ampDecay + 0.1, now);
+      // If there is sustain, hold it for a bit then release. 
+      // Since this is a "One Shot" generator, we simulate a key press of fixed duration (e.g. 0.1s) + release
+      this.ampEnv.triggerAttackRelease(params.ampDecay + 0.1, now);
     } else {
-       // Pure impulse
-       this.ampEnv.triggerAttack(now);
+      // Pure impulse
+      this.ampEnv.triggerAttack(now);
     }
   }
 
   stop() {
     // Emergency stop
     this.ampEnv.triggerRelease();
+  }
+
+  async render(params: SynthParams): Promise<Tone.ToneAudioBuffer> {
+    const duration = params.ampAttack + params.ampDecay + 0.5; // Add some tail
+
+    return Tone.Offline(({ transport }) => {
+      // Recreate the graph for offline rendering
+      const masterGain = new Tone.Gain(0.5).toDestination();
+      const limiter = new Tone.Limiter(-1).connect(masterGain);
+
+      const ampEnv = new Tone.AmplitudeEnvelope({
+        attack: params.ampAttack,
+        decay: params.ampDecay,
+        sustain: params.ampSustain,
+        release: params.ampRelease,
+      }).connect(limiter);
+
+      // Tone Channel
+      const osc = new Tone.Oscillator(params.frequency, params.waveType).start(0);
+      const oscGain = new Tone.Gain(params.toneLevel);
+      osc.connect(oscGain);
+      oscGain.connect(ampEnv);
+
+      // Noise Channel
+      const noise = new Tone.Noise(params.noiseType).start(0);
+      const noiseGain = new Tone.Gain(params.noiseLevel);
+      noise.connect(noiseGain);
+      noiseGain.connect(ampEnv);
+
+      // Vibrato
+      const vibrato = new Tone.LFO(params.vibratoRate, -params.vibratoDepth * 600, params.vibratoDepth * 600).start(0);
+      vibrato.connect(osc.detune);
+
+      // Pitch Envelope
+      const freq = params.frequency;
+      const peakFreq = freq * Math.pow(2, params.pitchEnvAmount);
+
+      if (Math.abs(params.pitchEnvAmount) > 0.01) {
+        osc.frequency.setValueAtTime(freq, 0);
+        osc.frequency.linearRampToValueAtTime(peakFreq, params.pitchEnvAttack);
+        osc.frequency.exponentialRampToValueAtTime(freq, params.pitchEnvAttack + params.pitchEnvDecay);
+      }
+
+      // Trigger
+      if (params.ampSustain > 0) {
+        ampEnv.triggerAttackRelease(params.ampDecay + 0.1, 0);
+      } else {
+        ampEnv.triggerAttack(0);
+      }
+
+    }, duration);
   }
 }

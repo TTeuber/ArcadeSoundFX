@@ -1,7 +1,11 @@
-# RetroArcade SFX Gen
+# Retro Arcade SFX Gen
 
 <p align="center">
   <img src="Title.png" alt="RetroArcade SFX Gen" width="720" />
+</p>
+
+<p align="center">
+  <strong><a href="https://tteuber.github.io/ArcadeSoundFX/">▶ Live Demo</a></strong>
 </p>
 
 A browser-based 8-bit sound effects generator inspired by classic 80s arcade machines. Dial in coins, lasers, jumps, explosions, and power-ups with a dual-oscillator synth engine — then export them as WAV files for use in games or other projects.
@@ -42,8 +46,8 @@ constants.ts            # Default params + preset definitions
 The signal flow mirrors a classic mono synth voice:
 
 ```
-[Tone Osc] ─▶ [Gain] ─┐
-                      ├─▶ [Amp Envelope] ─▶ [Limiter] ─▶ [Master] ─▶ Output
+[Tone Osc]  ─▶ [Gain] ─┐
+                       ├─▶ [Amp Envelope] ─▶ [Limiter] ─▶ [Master] ─▶ Output
 [Noise Osc] ─▶ [Gain] ─┘                                       │
 [LFO] ─▶ osc.detune (vibrato)                                  └─▶ [Waveform Analyser]
 ```
@@ -70,4 +74,4 @@ npm run preview
 
 ## Why I Built This
 
-I wanted a small, focused project that touched the parts of frontend engineering I find most interesting: real-time audio synthesis, signal-graph design, and a UI that has a strong point of view. Arcade SFX are a great problem domain — the synthesis primitives are simple, but the result is immediately recognizable and fun to play with.
+I built this for my students. In my teaching job, I had kids building arcade-style games in Pygame and Scratch, and their projects were silent — finding or making decent sound effects was a real friction point for them. I wanted a tool they could open in a browser, click a preset or hit randomize, and walk away thirty seconds later with a usable WAV file to drop into their game. Keeping the UI direct and the export one click away were the design goals that fell out of that.

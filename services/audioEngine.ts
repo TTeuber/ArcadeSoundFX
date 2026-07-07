@@ -97,9 +97,6 @@ export class AudioEngine {
 
     // Trigger Envelope
     // If sustain is > 0, we need a triggerRelease, but for arcade "shots" usually triggerAttackRelease is best.
-    // Calculate total duration to ensure release phase happens
-    const duration = params.ampAttack + params.ampDecay + 0.1;
-
     if (params.ampSustain > 0) {
       // If there is sustain, hold it for a bit then release. 
       // Since this is a "One Shot" generator, we simulate a key press of fixed duration (e.g. 0.1s) + release
@@ -110,15 +107,10 @@ export class AudioEngine {
     }
   }
 
-  stop() {
-    // Emergency stop
-    this.ampEnv.triggerRelease();
-  }
-
   async render(params: SynthParams): Promise<Tone.ToneAudioBuffer> {
     const duration = params.ampAttack + params.ampDecay + 0.5; // Add some tail
 
-    return Tone.Offline(({ transport }) => {
+    return Tone.Offline(() => {
       // Recreate the graph for offline rendering
       const masterGain = new Tone.Gain(0.5).toDestination();
       const limiter = new Tone.Limiter(-1).connect(masterGain);

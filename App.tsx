@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { DEFAULT_PARAMS, PRESETS } from './constants';
 import { SynthParams, WaveType, NoiseType } from './types';
 import { AudioEngine } from './services/audioEngine';
@@ -9,31 +9,23 @@ import { audioBufferToWav } from './utils/wavEncoder';
 
 export default function App() {
   const [params, setParams] = useState<SynthParams>(DEFAULT_PARAMS);
-  const engineRef = useRef<AudioEngine | null>(null);
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [engine] = useState(() => new AudioEngine());
+  const isInitializedRef = useRef(false);
 
-  // Initialize Engine once
-  useEffect(() => {
-    engineRef.current = new AudioEngine();
-    return () => {
-      // Cleanup if necessary, Tone.js contexts usually persist
-    };
-  }, []);
-
-  const handlePlay = async () => {
-    if (!engineRef.current) return;
-
-    if (!isInitialized) {
-      await engineRef.current.init();
-      setIsInitialized(true);
+  // Browsers require a user gesture before audio can start, so every
+  // sound-producing action funnels through here.
+  const play = async (p: SynthParams) => {
+    if (!isInitializedRef.current) {
+      await engine.init();
+      isInitializedRef.current = true;
     }
-    engineRef.current.trigger(params);
+    engine.trigger(p);
   };
 
-  const handleExport = async () => {
-    if (!engineRef.current) return;
+  const handlePlay = () => play(params);
 
-    const toneBuffer = await engineRef.current.render(params);
+  const handleExport = async () => {
+    const toneBuffer = await engine.render(params);
     const buffer = toneBuffer.get() as AudioBuffer;
 
     const wavBlob = audioBufferToWav(buffer);
@@ -49,12 +41,11 @@ export default function App() {
   const applyPreset = (name: string) => {
     const preset = PRESETS[name];
     if (preset) {
-      setParams(prev => ({ ...prev, ...preset }));
-      // Auto play on preset select (optional, but nice for browsing)
-      // We need to wait for state update or just pass the new params directly
-      if (engineRef.current && isInitialized) {
-        engineRef.current.trigger({ ...params, ...preset });
-      }
+      // Merge over defaults (not current params) so a preset always sounds
+      // the same regardless of what was dialed in before.
+      const next = { ...DEFAULT_PARAMS, ...preset };
+      setParams(next);
+      play(next);
     }
   };
 
@@ -80,9 +71,7 @@ export default function App() {
     };
 
     setParams(randomParams);
-    if (engineRef.current && isInitialized) {
-      engineRef.current.trigger(randomParams);
-    }
+    play(randomParams);
   };
 
   return (
@@ -123,7 +112,7 @@ export default function App() {
 
           {/* Left Column: Visuals & Master Control */}
           <div className="md:col-span-4 flex flex-col">
-            <OscVisualizer engine={engineRef.current} />
+            <OscVisualizer engine={engine} />
 
             <button
               onClick={handlePlay}

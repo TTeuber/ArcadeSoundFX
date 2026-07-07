@@ -2,14 +2,14 @@ import React, { useEffect, useRef } from 'react';
 import { AudioEngine } from '../services/audioEngine';
 
 interface OscVisualizerProps {
-  engine: AudioEngine | null;
+  engine: AudioEngine;
 }
 
 export const OscVisualizer: React.FC<OscVisualizerProps> = ({ engine }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    if (!engine || !canvasRef.current) return;
+    if (!canvasRef.current) return;
 
     let animationId: number;
     const canvas = canvasRef.current;

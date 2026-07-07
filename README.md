@@ -6,6 +6,8 @@
 
 <p align="center">
   <strong><a href="https://tteuber.github.io/ArcadeSoundFX/">▶ Live Demo</a></strong>
+  <br />
+  <a href="https://github.com/TTeuber/ArcadeSoundFX/actions/workflows/ci.yml"><img src="https://github.com/TTeuber/ArcadeSoundFX/actions/workflows/ci.yml/badge.svg" alt="CI status" /></a>
 </p>
 
 A browser-based 8-bit sound effects generator inspired by classic 80s arcade machines. Dial in coins, lasers, jumps, explosions, and power-ups with a dual-oscillator synth engine — then export them as WAV files for use in games or other projects.

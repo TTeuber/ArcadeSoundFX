@@ -10,6 +10,10 @@
 
 A browser-based 8-bit sound effects generator inspired by classic 80s arcade machines. Dial in coins, lasers, jumps, explosions, and power-ups with a dual-oscillator synth engine — then export them as WAV files for use in games or other projects.
 
+<p align="center">
+  <img src="docs/screenshot.png" alt="Screenshot of the synth control panel" width="720" />
+</p>
+
 ## Features
 
 - **Dual-oscillator synth engine** — a tone oscillator (square / saw / triangle / sine) layered with a noise oscillator (white / pink / brown) for everything from clean melodic blips to gritty impacts.
@@ -25,7 +29,8 @@ A browser-based 8-bit sound effects generator inspired by classic 80s arcade mac
 - **React 19** + **TypeScript** — component-driven UI with strict typing across the synth parameter model.
 - **Tone.js** — Web Audio synthesis graph (oscillators, noise sources, amplitude envelope, LFO, limiter) plus offline rendering for WAV export.
 - **Vite 6** — dev server and build tooling.
-- **Tailwind CSS** — utility-first styling for the retro arcade aesthetic.
+- **Tailwind CSS 4** — utility-first styling for the retro arcade aesthetic, compiled at build time via `@tailwindcss/vite`.
+- **Vitest** — unit tests for the WAV encoder (RIFF header layout, PCM conversion, channel interleaving).
 - **Custom WAV encoder** — converts the rendered `AudioBuffer` to a downloadable 16-bit PCM WAV blob without third-party audio libraries.
 
 ## Architecture
@@ -72,6 +77,19 @@ npm run build
 npm run preview
 ```
 
+Tests and type checking:
+
+```bash
+npm test
+npm run typecheck
+```
+
+Pushes to `main` are built, tested, and deployed to GitHub Pages automatically via GitHub Actions.
+
 ## Why I Built This
 
 I built this for my students. In my teaching job, I had kids building arcade-style games in Pygame and Scratch, and their projects were silent — finding or making decent sound effects was a real friction point for them. I wanted a tool they could open in a browser, click a preset or hit randomize, and walk away thirty seconds later with a usable WAV file to drop into their game. Keeping the UI direct and the export one click away were the design goals that fell out of that.
+
+## License
+
+[MIT](LICENSE)

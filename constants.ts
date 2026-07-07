@@ -18,7 +18,7 @@ export const DEFAULT_PARAMS: SynthParams = {
 };
 
 export const PRESETS: Record<string, Partial<SynthParams>> = {
-  'Coin': {
+  Coin: {
     waveType: 'sine',
     toneLevel: 0.9,
     noiseLevel: 0,
@@ -29,9 +29,9 @@ export const PRESETS: Record<string, Partial<SynthParams>> = {
     pitchEnvAttack: 0.01,
     pitchEnvDecay: 0.3,
     pitchEnvAmount: 0.5,
-    vibratoDepth: 0
+    vibratoDepth: 0,
   },
-  'Laser': {
+  Laser: {
     waveType: 'sawtooth',
     toneLevel: 0.8,
     noiseLevel: 0,
@@ -42,9 +42,9 @@ export const PRESETS: Record<string, Partial<SynthParams>> = {
     pitchEnvAttack: 0.01,
     pitchEnvDecay: 0.2,
     pitchEnvAmount: -3, // Pitch drops
-    vibratoDepth: 0
+    vibratoDepth: 0,
   },
-  'Explosion': {
+  Explosion: {
     waveType: 'sawtooth',
     toneLevel: 0.1,
     noiseLevel: 1.0,
@@ -55,9 +55,9 @@ export const PRESETS: Record<string, Partial<SynthParams>> = {
     ampSustain: 0,
     pitchEnvAmount: -2,
     vibratoDepth: 0.2,
-    vibratoRate: 20
+    vibratoRate: 20,
   },
-  'Jump': {
+  Jump: {
     waveType: 'square',
     toneLevel: 0.8,
     noiseLevel: 0,
@@ -68,9 +68,9 @@ export const PRESETS: Record<string, Partial<SynthParams>> = {
     pitchEnvAttack: 0.05,
     pitchEnvDecay: 0.2,
     pitchEnvAmount: 1.5, // Pitch goes up
-    vibratoDepth: 0
+    vibratoDepth: 0,
   },
-  'Powerup': {
+  Powerup: {
     waveType: 'triangle',
     toneLevel: 0.8,
     noiseLevel: 0,
@@ -83,6 +83,6 @@ export const PRESETS: Record<string, Partial<SynthParams>> = {
     pitchEnvDecay: 0.5,
     pitchEnvAmount: 2,
     vibratoDepth: 0.5,
-    vibratoRate: 10
-  }
+    vibratoRate: 10,
+  },
 };

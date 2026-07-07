@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useId } from 'react';
 
 interface SliderProps {
   label: string;
@@ -11,14 +11,16 @@ interface SliderProps {
 }
 
 export const Slider: React.FC<SliderProps> = ({ label, value, min, max, step, onChange, unit }) => {
+  const id = useId();
   return (
     <div className="mb-4">
       <div className="flex justify-between items-end mb-1 font-bold text-sm tracking-wider text-[#ff8906]">
-        <label className="uppercase">{label}</label>
+        <label htmlFor={id} className="uppercase">{label}</label>
         <span className="text-[#fffffe]">{value}{unit ? unit : ''}</span>
       </div>
       <div className="relative h-6 w-full bg-slate-800 border border-slate-600">
           <input
+            id={id}
             type="range"
             min={min}
             max={max}

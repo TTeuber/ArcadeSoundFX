@@ -1,7 +1,15 @@
 {
   "name": "retroarcade-sfx-gen",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "Browser-based 8-bit sound effects generator with a dual-oscillator synth engine and WAV export, inspired by 80s arcade machines.",
+  "license": "MIT",
+  "author": "Tyler Teuber",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TTeuber/ArcadeSoundFX.git"
+  },
+  "homepage": "https://tteuber.github.io/ArcadeSoundFX/",
   "type": "module",
   "scripts": {
     "dev": "vite",

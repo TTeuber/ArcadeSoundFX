@@ -11,7 +11,15 @@ export class AudioEngine {
   private masterGain: Tone.Gain;
   public analyser: Tone.Waveform;
 
-  constructor() {
+  // The context must be resumed (inside a user gesture) before any nodes are
+  // created, otherwise Tone warns about starting sources on a suspended
+  // context — hence a factory rather than `new` + a separate init call.
+  static async create(): Promise<AudioEngine> {
+    await Tone.start();
+    return new AudioEngine();
+  }
+
+  private constructor() {
     // Create nodes
     this.masterGain = new Tone.Gain(0.5).toDestination();
 
@@ -43,10 +51,6 @@ export class AudioEngine {
     // Vibrato (LFO connected to detune for pitch wobble)
     this.vibrato = new Tone.LFO(5, -50, 50).start(); // Depth in cents
     this.vibrato.connect(this.osc.detune);
-  }
-
-  async init() {
-    await Tone.start();
   }
 
   trigger(params: SynthParams) {
@@ -92,13 +96,16 @@ export class AudioEngine {
       // Attack to Peak
       this.osc.frequency.linearRampToValueAtTime(peakFreq, now + params.pitchEnvAttack);
       // Decay to Base
-      this.osc.frequency.exponentialRampToValueAtTime(freq, now + params.pitchEnvAttack + params.pitchEnvDecay);
+      this.osc.frequency.exponentialRampToValueAtTime(
+        freq,
+        now + params.pitchEnvAttack + params.pitchEnvDecay,
+      );
     }
 
     // Trigger Envelope
     // If sustain is > 0, we need a triggerRelease, but for arcade "shots" usually triggerAttackRelease is best.
     if (params.ampSustain > 0) {
-      // If there is sustain, hold it for a bit then release. 
+      // If there is sustain, hold it for a bit then release.
       // Since this is a "One Shot" generator, we simulate a key press of fixed duration (e.g. 0.1s) + release
       this.ampEnv.triggerAttackRelease(params.ampDecay + 0.1, now);
     } else {
@@ -135,7 +142,11 @@ export class AudioEngine {
       noiseGain.connect(ampEnv);
 
       // Vibrato
-      const vibrato = new Tone.LFO(params.vibratoRate, -params.vibratoDepth * 600, params.vibratoDepth * 600).start(0);
+      const vibrato = new Tone.LFO(
+        params.vibratoRate,
+        -params.vibratoDepth * 600,
+        params.vibratoDepth * 600,
+      ).start(0);
       vibrato.connect(osc.detune);
 
       // Pitch Envelope
@@ -145,7 +156,10 @@ export class AudioEngine {
       if (Math.abs(params.pitchEnvAmount) > 0.01) {
         osc.frequency.setValueAtTime(freq, 0);
         osc.frequency.linearRampToValueAtTime(peakFreq, params.pitchEnvAttack);
-        osc.frequency.exponentialRampToValueAtTime(freq, params.pitchEnvAttack + params.pitchEnvDecay);
+        osc.frequency.exponentialRampToValueAtTime(
+          freq,
+          params.pitchEnvAttack + params.pitchEnvDecay,
+        );
       }
 
       // Trigger
@@ -154,7 +168,6 @@ export class AudioEngine {
       } else {
         ampEnv.triggerAttack(0);
       }
-
     }, duration);
   }
 }

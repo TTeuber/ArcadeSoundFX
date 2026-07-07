@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { DEFAULT_PARAMS, PRESETS } from './constants';
 import { SynthParams, WaveType, NoiseType } from './types';
-import { AudioEngine } from './services/audioEngine';
+import type { AudioEngine } from './services/audioEngine';
 import { Slider } from './components/Slider';
 import { OscVisualizer } from './components/OscVisualizer';
 import { Play, Dice5, Volume2, Zap, Waves, Activity, Download } from 'lucide-react';
@@ -9,23 +9,31 @@ import { audioBufferToWav } from './utils/wavEncoder';
 
 export default function App() {
   const [params, setParams] = useState<SynthParams>(DEFAULT_PARAMS);
-  const [engine] = useState(() => new AudioEngine());
-  const isInitializedRef = useRef(false);
+  const engineRef = useRef<AudioEngine | null>(null);
+  const [engine, setEngine] = useState<AudioEngine | null>(null);
 
-  // Browsers require a user gesture before audio can start, so every
-  // sound-producing action funnels through here.
-  const play = async (p: SynthParams) => {
-    if (!isInitializedRef.current) {
-      await engine.init();
-      isInitializedRef.current = true;
+  // Browsers require a user gesture before audio can start, so the engine is
+  // only created once inside one — every sound-producing action funnels
+  // through here. Tone.js is imported dynamically because merely importing it
+  // creates an AudioContext, which Chrome warns about before a gesture.
+  const ensureEngine = async (): Promise<AudioEngine> => {
+    if (!engineRef.current) {
+      const { AudioEngine } = await import('./services/audioEngine');
+      const newEngine = await AudioEngine.create();
+      engineRef.current = newEngine;
+      setEngine(newEngine);
     }
-    engine.trigger(p);
+    return engineRef.current;
+  };
+
+  const play = async (p: SynthParams) => {
+    (await ensureEngine()).trigger(p);
   };
 
   const handlePlay = () => play(params);
 
   const handleExport = async () => {
-    const toneBuffer = await engine.render(params);
+    const toneBuffer = await (await ensureEngine()).render(params);
     const buffer = toneBuffer.get() as AudioBuffer;
 
     const wavBlob = audioBufferToWav(buffer);
@@ -65,7 +73,7 @@ export default function App() {
       ampRelease: 0.1,
       pitchEnvAttack: 0.01 + Math.random() * 0.2,
       pitchEnvDecay: 0.1 + Math.random() * 0.4,
-      pitchEnvAmount: (Math.random() * 6) - 3, // -3 to +3 octaves
+      pitchEnvAmount: Math.random() * 6 - 3, // -3 to +3 octaves
       vibratoDepth: Math.random() > 0.8 ? Math.random() : 0,
       vibratoRate: 5 + Math.random() * 15,
     };
@@ -80,7 +88,6 @@ export default function App() {
       <div className="absolute inset-0 crt-grid z-50 pointer-events-none opacity-20"></div>
 
       <div className="max-w-4xl w-full bg-[#16161a] border-4 border-[#7f5af0] shadow-[0_0_20px_rgba(127,90,240,0.5)] p-6 relative z-10">
-
         {/* Header */}
         <header className="flex flex-col md:flex-row justify-between items-center mb-8 border-b-2 border-[#2cb67d] pb-4">
           <div>
@@ -90,7 +97,7 @@ export default function App() {
             <p className="text-[#94a1b2] mt-1 text-lg tracking-widest">8-BIT SYNTHESIS ENGINE</p>
           </div>
           <div className="mt-4 md:mt-0 flex gap-2">
-            {Object.keys(PRESETS).map(presetName => (
+            {Object.keys(PRESETS).map((presetName) => (
               <button
                 key={presetName}
                 onClick={() => applyPreset(presetName)}
@@ -109,7 +116,6 @@ export default function App() {
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-
           {/* Left Column: Visuals & Master Control */}
           <div className="md:col-span-4 flex flex-col">
             <OscVisualizer engine={engine} />
@@ -129,33 +135,78 @@ export default function App() {
             </button>
 
             <div className="mt-8 p-4 border border-[#7f5af0] bg-[#242629]">
-              <h2 className="text-[#7f5af0] text-xl mb-4 flex items-center gap-2"><Activity size={20} /> MASTER ENV (AD)</h2>
-              <Slider label="Attack" value={params.ampAttack} min={0.001} max={1.0} step={0.01} unit="s" onChange={(v) => setParams(p => ({ ...p, ampAttack: v }))} />
-              <Slider label="Decay" value={params.ampDecay} min={0.01} max={2.0} step={0.01} unit="s" onChange={(v) => setParams(p => ({ ...p, ampDecay: v }))} />
+              <h2 className="text-[#7f5af0] text-xl mb-4 flex items-center gap-2">
+                <Activity size={20} /> MASTER ENV (AD)
+              </h2>
+              <Slider
+                label="Attack"
+                value={params.ampAttack}
+                min={0.001}
+                max={1.0}
+                step={0.01}
+                unit="s"
+                onChange={(v) => setParams((p) => ({ ...p, ampAttack: v }))}
+              />
+              <Slider
+                label="Decay"
+                value={params.ampDecay}
+                min={0.01}
+                max={2.0}
+                step={0.01}
+                unit="s"
+                onChange={(v) => setParams((p) => ({ ...p, ampDecay: v }))}
+              />
             </div>
 
             <div className="mt-4 p-4 border border-[#f25f4c] bg-[#242629]">
-              <h2 className="text-[#f25f4c] text-xl mb-4 flex items-center gap-2"><Zap size={20} /> PITCH ENV</h2>
-              <Slider label="Attack" value={params.pitchEnvAttack} min={0.001} max={1.0} step={0.01} unit="s" onChange={(v) => setParams(p => ({ ...p, pitchEnvAttack: v }))} />
-              <Slider label="Decay" value={params.pitchEnvDecay} min={0.01} max={1.0} step={0.01} unit="s" onChange={(v) => setParams(p => ({ ...p, pitchEnvDecay: v }))} />
-              <Slider label="Mod Amt" value={params.pitchEnvAmount} min={-4} max={4} step={0.1} unit="oct" onChange={(v) => setParams(p => ({ ...p, pitchEnvAmount: v }))} />
+              <h2 className="text-[#f25f4c] text-xl mb-4 flex items-center gap-2">
+                <Zap size={20} /> PITCH ENV
+              </h2>
+              <Slider
+                label="Attack"
+                value={params.pitchEnvAttack}
+                min={0.001}
+                max={1.0}
+                step={0.01}
+                unit="s"
+                onChange={(v) => setParams((p) => ({ ...p, pitchEnvAttack: v }))}
+              />
+              <Slider
+                label="Decay"
+                value={params.pitchEnvDecay}
+                min={0.01}
+                max={1.0}
+                step={0.01}
+                unit="s"
+                onChange={(v) => setParams((p) => ({ ...p, pitchEnvDecay: v }))}
+              />
+              <Slider
+                label="Mod Amt"
+                value={params.pitchEnvAmount}
+                min={-4}
+                max={4}
+                step={0.1}
+                unit="oct"
+                onChange={(v) => setParams((p) => ({ ...p, pitchEnvAmount: v }))}
+              />
             </div>
           </div>
 
           {/* Right Column: Generators */}
           <div className="md:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-
             {/* Tone Oscillator */}
             <div className="p-5 border-2 border-[#2cb67d] bg-[#1e1e24]">
               <div className="flex justify-between items-center mb-4 text-[#2cb67d]">
-                <h2 className="text-2xl flex items-center gap-2"><Waves size={24} /> TONE OSC</h2>
+                <h2 className="text-2xl flex items-center gap-2">
+                  <Waves size={24} /> TONE OSC
+                </h2>
               </div>
 
               <div className="flex gap-1 mb-6 bg-slate-800 p-1">
                 {(['square', 'sawtooth', 'triangle', 'sine'] as WaveType[]).map((w) => (
                   <button
                     key={w}
-                    onClick={() => setParams(p => ({ ...p, waveType: w }))}
+                    onClick={() => setParams((p) => ({ ...p, waveType: w }))}
                     className={`flex-1 py-2 text-center text-xs uppercase font-bold transition-colors ${params.waveType === w ? 'bg-[#2cb67d] text-[#0f0e17]' : 'text-[#94a1b2] hover:bg-slate-700'}`}
                   >
                     {w.slice(0, 3)}
@@ -163,27 +214,59 @@ export default function App() {
                 ))}
               </div>
 
-              <Slider label="Level" value={params.toneLevel} min={0} max={1} step={0.01} onChange={(v) => setParams(p => ({ ...p, toneLevel: v }))} />
-              <Slider label="Freq" value={Math.round(params.frequency)} min={50} max={2000} step={10} unit="Hz" onChange={(v) => setParams(p => ({ ...p, frequency: v }))} />
+              <Slider
+                label="Level"
+                value={params.toneLevel}
+                min={0}
+                max={1}
+                step={0.01}
+                onChange={(v) => setParams((p) => ({ ...p, toneLevel: v }))}
+              />
+              <Slider
+                label="Freq"
+                value={Math.round(params.frequency)}
+                min={50}
+                max={2000}
+                step={10}
+                unit="Hz"
+                onChange={(v) => setParams((p) => ({ ...p, frequency: v }))}
+              />
 
               <div className="mt-6 border-t border-slate-700 pt-4">
                 <h3 className="text-[#94a1b2] text-sm mb-2 uppercase">Vibrato</h3>
-                <Slider label="Depth" value={params.vibratoDepth} min={0} max={1} step={0.01} onChange={(v) => setParams(p => ({ ...p, vibratoDepth: v }))} />
-                <Slider label="Rate" value={params.vibratoRate} min={0.1} max={20} step={0.1} unit="Hz" onChange={(v) => setParams(p => ({ ...p, vibratoRate: v }))} />
+                <Slider
+                  label="Depth"
+                  value={params.vibratoDepth}
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  onChange={(v) => setParams((p) => ({ ...p, vibratoDepth: v }))}
+                />
+                <Slider
+                  label="Rate"
+                  value={params.vibratoRate}
+                  min={0.1}
+                  max={20}
+                  step={0.1}
+                  unit="Hz"
+                  onChange={(v) => setParams((p) => ({ ...p, vibratoRate: v }))}
+                />
               </div>
             </div>
 
             {/* Noise Oscillator */}
             <div className="p-5 border-2 border-[#ff8906] bg-[#1e1e24]">
               <div className="flex justify-between items-center mb-4 text-[#ff8906]">
-                <h2 className="text-2xl flex items-center gap-2"><Volume2 size={24} /> NOISE OSC</h2>
+                <h2 className="text-2xl flex items-center gap-2">
+                  <Volume2 size={24} /> NOISE OSC
+                </h2>
               </div>
 
               <div className="flex gap-1 mb-6 bg-slate-800 p-1">
                 {(['white', 'pink', 'brown'] as NoiseType[]).map((n) => (
                   <button
                     key={n}
-                    onClick={() => setParams(p => ({ ...p, noiseType: n }))}
+                    onClick={() => setParams((p) => ({ ...p, noiseType: n }))}
                     className={`flex-1 py-2 text-center text-xs uppercase font-bold transition-colors ${params.noiseType === n ? 'bg-[#ff8906] text-[#0f0e17]' : 'text-[#94a1b2] hover:bg-slate-700'}`}
                   >
                     {n}
@@ -191,22 +274,28 @@ export default function App() {
                 ))}
               </div>
 
-              <Slider label="Level" value={params.noiseLevel} min={0} max={1} step={0.01} onChange={(v) => setParams(p => ({ ...p, noiseLevel: v }))} />
+              <Slider
+                label="Level"
+                value={params.noiseLevel}
+                min={0}
+                max={1}
+                step={0.01}
+                onChange={(v) => setParams((p) => ({ ...p, noiseLevel: v }))}
+              />
 
               <div className="mt-8 p-4 bg-slate-800/50 border border-slate-700">
                 <p className="text-xs text-[#94a1b2] leading-relaxed">
-                  TIP: Mix "Brown" noise with a low frequency saw wave for explosions. Use "White" noise with a short decay for snares or hits.
+                  TIP: Mix "Brown" noise with a low frequency saw wave for explosions. Use "White"
+                  noise with a short decay for snares or hits.
                 </p>
               </div>
             </div>
-
           </div>
         </div>
 
         <div className="mt-6 text-center text-[#555] text-xs uppercase">
           Powered by Tone.js • React • Tailwind
         </div>
-
       </div>
     </div>
   );

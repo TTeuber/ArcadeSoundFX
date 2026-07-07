@@ -1,9 +1,13 @@
 import React, { useEffect, useRef } from 'react';
-import { AudioEngine } from '../services/audioEngine';
+import type { AudioEngine } from '../services/audioEngine';
 
 interface OscVisualizerProps {
-  engine: AudioEngine;
+  // Null until the first user gesture creates the engine; a silent trace is
+  // drawn in the meantime.
+  engine: AudioEngine | null;
 }
+
+const SILENCE = new Float32Array(256);
 
 export const OscVisualizer: React.FC<OscVisualizerProps> = ({ engine }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -17,7 +21,7 @@ export const OscVisualizer: React.FC<OscVisualizerProps> = ({ engine }) => {
     if (!ctx) return;
 
     const draw = () => {
-      const values = engine.analyser.getValue();
+      const values = engine ? engine.analyser.getValue() : SILENCE;
       const width = canvas.width;
       const height = canvas.height;
 
@@ -28,8 +32,14 @@ export const OscVisualizer: React.FC<OscVisualizerProps> = ({ engine }) => {
       ctx.strokeStyle = '#2e2f3e';
       ctx.lineWidth = 1;
       ctx.beginPath();
-      for(let x=0; x<width; x+=20) { ctx.moveTo(x,0); ctx.lineTo(x, height); }
-      for(let y=0; y<height; y+=20) { ctx.moveTo(0,y); ctx.lineTo(width, y); }
+      for (let x = 0; x < width; x += 20) {
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+      }
+      for (let y = 0; y < height; y += 20) {
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+      }
       ctx.stroke();
 
       // Draw Wave
@@ -40,7 +50,7 @@ export const OscVisualizer: React.FC<OscVisualizerProps> = ({ engine }) => {
       // Tone.js Waveform returns Float32Array [-1, 1]
       for (let i = 0; i < values.length; i++) {
         const x = (i / values.length) * width;
-        const y = ((values[i] as number) + 1) / 2 * height; // Map -1..1 to 0..height
+        const y = (((values[i] as number) + 1) / 2) * height; // Map -1..1 to 0..height
         if (i === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
       }
@@ -54,10 +64,10 @@ export const OscVisualizer: React.FC<OscVisualizerProps> = ({ engine }) => {
   }, [engine]);
 
   return (
-    <canvas 
-      ref={canvasRef} 
-      width={300} 
-      height={100} 
+    <canvas
+      ref={canvasRef}
+      width={300}
+      height={100}
       className="w-full h-24 border-2 border-[#2cb67d] bg-[#0f0e17] mb-6 shadow-[0_0_10px_rgba(44,182,125,0.3)]"
     />
   );

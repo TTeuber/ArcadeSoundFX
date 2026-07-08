@@ -71,11 +71,10 @@ export class AudioEngine {
     this.noiseGain.gain.cancelScheduledValues(now);
     this.noiseGain.gain.setValueAtTime(params.noiseLevel, now);
 
-    // Update Amp Envelope
+    // Update Amp Envelope (pure AD: sustain is fixed at 0, so the sound always
+    // dies out over the decay time and no release stage is ever reached)
     this.ampEnv.attack = params.ampAttack;
     this.ampEnv.decay = params.ampDecay;
-    this.ampEnv.sustain = params.ampSustain;
-    this.ampEnv.release = params.ampRelease;
 
     // Update Vibrato
     this.vibrato.frequency.value = params.vibratoRate;
@@ -102,16 +101,8 @@ export class AudioEngine {
       );
     }
 
-    // Trigger Envelope
-    // If sustain is > 0, we need a triggerRelease, but for arcade "shots" usually triggerAttackRelease is best.
-    if (params.ampSustain > 0) {
-      // If there is sustain, hold it for a bit then release.
-      // Since this is a "One Shot" generator, we simulate a key press of fixed duration (e.g. 0.1s) + release
-      this.ampEnv.triggerAttackRelease(params.ampDecay + 0.1, now);
-    } else {
-      // Pure impulse
-      this.ampEnv.triggerAttack(now);
-    }
+    // Pure impulse: attack then decay to silence
+    this.ampEnv.triggerAttack(now);
   }
 
   async render(params: SynthParams): Promise<Tone.ToneAudioBuffer> {
@@ -125,8 +116,8 @@ export class AudioEngine {
       const ampEnv = new Tone.AmplitudeEnvelope({
         attack: params.ampAttack,
         decay: params.ampDecay,
-        sustain: params.ampSustain,
-        release: params.ampRelease,
+        sustain: 0,
+        release: 0.1,
       }).connect(limiter);
 
       // Tone Channel
@@ -163,11 +154,7 @@ export class AudioEngine {
       }
 
       // Trigger
-      if (params.ampSustain > 0) {
-        ampEnv.triggerAttackRelease(params.ampDecay + 0.1, 0);
-      } else {
-        ampEnv.triggerAttack(0);
-      }
+      ampEnv.triggerAttack(0);
     }, duration);
   }
 }

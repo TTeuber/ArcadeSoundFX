@@ -14,8 +14,6 @@ export interface SynthParams {
   // Amp Envelope (AD)
   ampAttack: number; // seconds
   ampDecay: number; // seconds
-  ampSustain: number; // 0 to 1 (We will mostly keep this low for SFX)
-  ampRelease: number; // seconds
 
   // Pitch Envelope (AD)
   pitchEnvAttack: number; // seconds

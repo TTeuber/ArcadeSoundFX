@@ -1,7 +1,7 @@
-# Retro Arcade SFX Gen
+# ArcadeSoundFX
 
 <p align="center">
-  <img src="Title.png" alt="RetroArcade SFX Gen" width="720" />
+  <img src="Title.png" alt="ArcadeSoundFX" width="720" />
 </p>
 
 <p align="center">
@@ -20,10 +20,12 @@ A browser-based 8-bit sound effects generator inspired by classic 80s arcade mac
 
 - **Dual-oscillator synth engine** — a tone oscillator (square / saw / triangle / sine) layered with a noise oscillator (white / pink / brown) for everything from clean melodic blips to gritty impacts.
 - **Modulation** — independent amplitude (AD) and pitch (AD) envelopes plus a vibrato LFO, giving you the classic pitch sweeps and wobbles that define arcade SFX.
-- **Curated presets** — Coin, Laser, Explosion, Jump, and Powerup as starting points.
-- **Randomize** — generates a new sound on every click for fast inspiration.
+- **Describe a sound, get a sound** — an AI prompt bar ("a sad laser powering down") that turns text into synth parameters via the Claude API, behind a rate-limited Cloudflare Worker proxy — or bring your own API key.
+- **Curated presets** — Coin, Laser, Explosion, Jump, Powerup, Hit, Blip, and Alarm as starting points.
+- **Smart randomize + undo** — randomization jitters around preset archetypes (with the occasional wild roll) so results stay usable, and the previous sound is always one Undo away.
+- **Shareable URLs** — the full patch is encoded in the URL hash, so any sound can be linked or bookmarked.
 - **WAV export** — render the patch offline through Tone.js and download as a 16-bit PCM WAV.
-- **Live waveform visualizer** — real-time oscilloscope readout while you tweak.
+- **Live waveform visualizer** — real-time oscilloscope readout while you tweak; spacebar re-triggers the sound.
 - **CRT-styled retro UI** — VT323 type, scanline overlay, and a chunky neon control panel.
 
 ## Tech Stack
@@ -38,17 +40,34 @@ A browser-based 8-bit sound effects generator inspired by classic 80s arcade mac
 ## Architecture
 
 ```
-App.tsx                 # UI, state, preset & randomize logic
+App.tsx                 # UI, state, preset/randomize/undo/share logic
 services/
   audioEngine.ts        # Tone.js signal graph + live trigger + offline render
+  soundPrompt.ts        # AI generation client (Worker proxy or user's own key)
+  soundSchema.ts        # System prompt + JSON schema for sound generation
+  llmConfig.ts          # Worker URL + model config
 components/
   Slider.tsx            # Reusable retro range slider
   OscVisualizer.tsx     # Live waveform oscilloscope
+  PromptBar.tsx         # "Describe a sound" AI input
 utils/
   wavEncoder.ts         # AudioBuffer → 16-bit PCM WAV encoder
+  params.ts             # Param bounds, clamping, sanitization
+  urlState.ts           # SynthParams ⇄ URL hash
 types.ts                # SynthParams, WaveType, NoiseType
 constants.ts            # Default params + preset definitions
+worker/                 # Cloudflare Worker: rate-limited Anthropic API proxy
 ```
+
+### AI backend
+
+The frontend stays a static GitHub Pages site; AI requests go to a small Cloudflare
+Worker (`worker/`) that holds the Anthropic API key as a secret and enforces
+origin-locked CORS, per-IP and global daily rate limits (Workers KV), and a capped
+response size. The model returns schema-validated JSON (Claude structured outputs),
+which the client additionally clamps to slider ranges. Visitors can alternatively
+supply their own API key, which is stored in localStorage and sent directly from the
+browser to Anthropic — it never touches the Worker.
 
 The signal flow mirrors a classic mono synth voice:
 
@@ -87,6 +106,22 @@ npm run typecheck
 ```
 
 Pushes to `main` are built, tested, and deployed to GitHub Pages automatically via GitHub Actions.
+
+### Deploying your own AI backend (optional)
+
+The site works fully without it (the AI bar falls back to bring-your-own-key mode).
+To run the shared backend on a free Cloudflare account:
+
+```bash
+cd worker
+npm install
+npx wrangler kv namespace create RATE_LIMITS   # paste the id into wrangler.jsonc
+npx wrangler secret put ANTHROPIC_API_KEY
+npx wrangler deploy
+```
+
+Then set the printed Worker URL as `WORKER_URL` in `services/llmConfig.ts`. Origins,
+daily rate limits, and the model are configured in `worker/wrangler.jsonc`.
 
 ## Why I Built This
 

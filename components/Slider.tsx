@@ -12,6 +12,9 @@ interface SliderProps {
 
 export const Slider: React.FC<SliderProps> = ({ label, value, min, max, step, onChange, unit }) => {
   const id = useId();
+  // Show as many decimals as the step resolves (0.01 -> 2, 0.1 -> 1, 10 -> 0)
+  // so programmatic values (randomize, presets, AI) never render float noise.
+  const decimals = step >= 1 ? 0 : step >= 0.1 ? 1 : 2;
   return (
     <div className="mb-4">
       <div className="flex justify-between items-end mb-1 font-bold text-sm tracking-wider text-[#ff8906]">
@@ -19,11 +22,11 @@ export const Slider: React.FC<SliderProps> = ({ label, value, min, max, step, on
           {label}
         </label>
         <span className="text-[#fffffe]">
-          {value}
+          {value.toFixed(decimals)}
           {unit ? unit : ''}
         </span>
       </div>
-      <div className="relative h-6 w-full bg-slate-800 border border-slate-600">
+      <div className="relative h-6 w-full bg-slate-800 border border-slate-600 overflow-hidden">
         <input
           id={id}
           type="range"
@@ -36,7 +39,10 @@ export const Slider: React.FC<SliderProps> = ({ label, value, min, max, step, on
         />
         <div
           className="absolute top-0 left-0 h-full bg-[#f25f4c] border-r-2 border-white pointer-events-none"
-          style={{ width: `${((value - min) / (max - min)) * 100}%` }}
+          style={{
+            // Clamp so an out-of-range value can never paint outside the track
+            width: `${Math.min(100, Math.max(0, ((value - min) / (max - min)) * 100))}%`,
+          }}
         ></div>
         {/* Grid lines for decoration */}
         <div className="absolute top-0 left-0 w-full h-full flex justify-between px-1 pointer-events-none opacity-30">

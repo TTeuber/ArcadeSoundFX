@@ -3,7 +3,8 @@ import tseslint from 'typescript-eslint';
 import reactHooks from 'eslint-plugin-react-hooks';
 
 export default tseslint.config(
-  { ignores: ['dist'] },
+  // worker/ is its own package (Cloudflare Workers types + generated d.ts)
+  { ignores: ['dist', 'worker'] },
   js.configs.recommended,
   tseslint.configs.recommended,
   // Just the classic hooks rules; the plugin's recommended config also ships

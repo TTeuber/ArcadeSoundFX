@@ -1,5 +1,5 @@
 {
-  "name": "retroarcade-sfx-gen",
+  "name": "arcadesoundfx",
   "private": true,
   "version": "1.0.0",
   "description": "Browser-based 8-bit sound effects generator with a dual-oscillator synth engine and WAV export, inspired by 80s arcade machines.",
@@ -23,6 +23,7 @@
     "deploy": "gh-pages -d dist"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.110.0",
     "@fontsource/vt323": "^5.2.7",
     "lucide-react": "^0.554.0",
     "react": "^19.2.0",

@@ -1,0 +1,31 @@
+// Cloudflare Worker config — see SETUP_TODO.md for the deploy steps.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "arcadesoundfx-ai",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-07-07",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1,
+  },
+  "vars": {
+    // Origins allowed to call this Worker (comma-separated).
+    "ALLOWED_ORIGINS": "https://tteuber.github.io,http://localhost:3000",
+    // Requests per visitor IP per UTC day.
+    "DAILY_LIMIT_PER_IP": "10",
+    // Requests across all visitors per UTC day — the cost ceiling.
+    "DAILY_LIMIT_GLOBAL": "250",
+    // Model used for sound generation.
+    "MODEL": "claude-haiku-4-5",
+  },
+  // Secret (set via `npx wrangler secret put ANTHROPIC_API_KEY`, never in this file):
+  //   ANTHROPIC_API_KEY
+  "kv_namespaces": [
+    {
+      "binding": "RATE_LIMITS",
+      // Run `npx wrangler kv namespace create RATE_LIMITS` and paste the id it prints:
+      "id": "6169a4bb985c4d4b9a34fb256571d6a3",
+    },
+  ],
+}

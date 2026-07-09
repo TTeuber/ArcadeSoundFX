@@ -13,7 +13,7 @@
 A browser-based 8-bit sound effects generator inspired by classic 80s arcade machines. Dial in coins, lasers, jumps, explosions, and power-ups with a dual-oscillator synth engine — then export them as WAV files for use in games or other projects.
 
 <p align="center">
-  <img src="docs/screenshot.png" alt="Screenshot of the synth control panel" width="720" />
+  <img src="docs/ArcadeSoundFX.gif" alt="Screenshot of the synth control panel" width="720" />
 </p>
 
 ## Features
